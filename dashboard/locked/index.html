@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crypbro Locked Test</title>
+<style>
+:root {
+  color-scheme: light;
+  --surface: #fcfcfb; --surface-2: #f3f2ee; --border: #e3e2dc;
+  --text: #0b0b0b; --text-2: #52514e; --text-3: #75746f; --grid: #e8e7e1;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4;
+  --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
+  --good: #0a7a3e; --bad: #c62f2e; --warn: #9a6500; --warn-bg: #fbf1dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface: #1a1a19; --surface-2: #242423; --border: #363633;
+    --text: #f0efec; --text-2: #c3c2b7; --text-3: #9b9a90; --grid: #30302d;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181;
+    --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    --good: #4cc38a; --bad: #f07a79; --warn: #e0a93a; --warn-bg: #2e2617;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
+main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 20px; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 15px; margin: 32px 0 10px; }
+.note { color: var(--text-2); font-size: 13px; }
+.status { margin-left: auto; font-size: 13px; color: var(--text-2); }
+.banner { border: 1px solid var(--warn); background: var(--warn-bg); color: var(--text); border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 16px; font-size: 13px; display: none; }
+.banner b { color: var(--warn); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--surface); }
+.card.hidden-model { opacity: 0.55; }
+.card h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.key { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+.key.dashed { background: none !important; border-top: 2px dashed var(--text); height: 0; }
+.card .sub { color: var(--text-3); font-size: 12px; margin-bottom: 8px; }
+.big { font-size: 26px; font-weight: 600; line-height: 1.2; }
+.delta { font-size: 13px; color: var(--text-2); margin-left: 6px; }
+dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 10px 0 0; font-size: 13px; }
+dt { color: var(--text-2); } dd { margin: 0; text-align: right; }
+.chart { position: relative; border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.chart svg { display: block; width: 100%; height: 320px; touch-action: pan-y; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; font-size: 13px; color: var(--text-2); min-height: 19px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
+.tip .row { display: flex; align-items: center; gap: 6px; }
+.tip .row b { margin-left: auto; padding-left: 12px; font-weight: 600; }
+.empty { color: var(--text-2); padding: 40px 8px; text-align: center; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+button { font: inherit; font-size: 13px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+button:hover { border-color: var(--text-3); }
+button[aria-pressed="true"] { background: var(--text); color: var(--surface); border-color: var(--text); }
+.switch { align-items: center; color: var(--text-2); font-size: 13px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--text-2); font-weight: 500; background: var(--surface-2); white-space: nowrap; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: 0; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--surface-2); }
+td.n, th.n { text-align: right; }
+td { white-space: nowrap; }
+td label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--series-1); cursor: pointer; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.verdict { font-weight: 600; }
+.verdict.pass { color: var(--good); } .verdict.fail { color: var(--bad); }
+.small { color: var(--text-3); font-size: 12px; }
+</style>
+</head>
+<body data-static="1">
+<main>
+  <header>
+    <h1>Crypbro locked test</h1>
+    <span class="note" id="period">Backtest results</span>
+    <a class="note" id="a-link" href="/">A-team</a>
+    <a class="note" id="b-link" href="/b-team">B-team</a>
+    <span class="status" id="status" role="status">Loading…</span>
+  </header>
+  <div class="banner" id="banner" role="note"></div>
+  <div class="tools switch" id="size-switch" style="display:none" role="group" aria-label="Starting balance"></div>
+  <section class="cards" id="cards" aria-label="Models"></section>
+
+  <h2 id="chart-title">Return over the test year</h2>
+  <div class="chart" id="chart">
+    <div class="legend" id="legend"></div>
+    <svg id="plot" role="img" aria-label="Return of each selected model over the test year"></svg>
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <h2>Models</h2>
+  <div class="tools">
+    <button type="button" id="show-all">Show all</button>
+    <button type="button" id="show-passing">Only passing</button>
+    <button type="button" id="show-live">Only live-ready</button>
+    <button type="button" id="hide-all">Hide all</button>
+  </div>
+  <div class="table-wrap"><table id="models"></table></div>
+  <p class="small" id="rules">A model passes when it is profitable after fees, still profitable without its best coin, and profitable at every entry delay
+    (0, 5, 10, 15 and 20 minutes). The chart and returns use no delay. Live-ready means the live trader can run it today.</p>
+</main>
+<script>
+// The published copy on GitHub Pages reads a saved file; the local page asks the dashboard server.
+const STATIC = document.body.dataset.static === "1";
+if (STATIC) { document.getElementById("a-link").href = "../"; document.getElementById("b-link").href = "../b-team/"; }
+
+const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)", "var(--series-6)", "var(--series-7)", "var(--series-8)"];
+// Only eight colours are validated, so models beyond them are patterned lines in the text colour.
+const EXTRA_LINES = [{dash: "6 4", label: "dashed"}, {dash: "1 5", label: "dotted"}];
+const seriesColor = i => SERIES[i] || "var(--text)";
+const seriesDash = i => i < SERIES.length ? "none" : EXTRA_LINES[(i - SERIES.length) % EXTRA_LINES.length].dash;
+const $ = id => document.getElementById(id);
+const usd = v => (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const signedUsd = v => (v > 0 ? "+" : "") + usd(v);
+const pct = (v, digits = 1) => (v > 0 ? "+" : "") + v.toFixed(digits) + "%";
+const day = ms => new Date(ms).toLocaleDateString(undefined, {month: "short", day: "numeric", year: "numeric", timeZone: "UTC"});
+const month = ms => new Date(ms).toLocaleDateString(undefined, {month: "short", year: "2-digit", timeZone: "UTC"});
+const tone = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === "class" ? node.className = v : node.setAttribute(k, v);
+  node.append(...children);
+  return node;
+}
+function keyMark(m) {
+  return m.series < SERIES.length ? el("span", {class: "key", style: `background:${seriesColor(m.series)}`}) : el("span", {class: "key dashed"});
+}
+
+// --- Which models are shown, remembered on this device ------------------
+const STORE_KEY = "crypbro-locked-shown";
+let state = null, shown = null;
+function loadShown(kind, models) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(`${STORE_KEY}-${kind}`) || "null");
+    if (Array.isArray(saved)) return new Set(saved.filter(n => models.some(m => m.name === n)));
+  } catch {}
+  return new Set(models.map(m => m.name));
+}
+function saveShown() {
+  try { localStorage.setItem(`${STORE_KEY}-${state.kind}`, JSON.stringify([...shown])); } catch {}
+}
+function setShown(names) { shown = new Set(names); saveShown(); renderAll(); }
+function toggle(name) { shown.has(name) ? shown.delete(name) : shown.add(name); saveShown(); renderAll(); }
+
+// --- Rendering -------------------------------------------------------------
+function renderHeader(d) {
+  const practice = d.kind === "practice";
+  $("period").textContent = `${practice ? "Practice run" : "Locked year"}: ${day(Date.parse(d.start))} to ${day(Date.parse(d.end) - 86400000)} · `
+    + `$${d.start_usd.toLocaleString()} start at live size, at most ${d.max_leverage}x`;
+  $("chart-title").textContent = practice ? "Return over the practice year" : "Return over the locked year";
+  const banner = $("banner");
+  banner.style.display = practice || d.note ? "block" : "none";
+  if (practice) banner.replaceChildren(el("b", {}, "Practice run, not the locked test. "),
+    "This is the year before the locked year, which was already used in building these models. The locked year hasn't been run yet.");
+  else if (d.note) banner.replaceChildren(el("b", {}, "Size check, not the locked test. "), d.note);
+  $("status").textContent = `Finished ${new Date(d.finished_ms).toLocaleString(undefined, {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"})} · code ${d.commit.slice(0, 7)}`;
+}
+
+function renderCards(models) {
+  $("cards").replaceChildren(...models.map(m => {
+    const list = el("dl");
+    const add = (k, v, cls = "") => list.append(el("dt", {}, k), el("dd", {class: cls}, v));
+    add("Worst drop", pct(m.max_drawdown * 100));
+    add("Trades", m.trades.toLocaleString());
+    add("Without best coin", signedUsd(m.net_without_best_coin), tone(m.net_without_best_coin));
+    add("Worst entry delay", pct(m.worst_delay_return * 100), tone(m.worst_delay_return));
+    add("Longs / shorts", `${signedUsd(m.long_net)} / ${signedUsd(m.short_net)}`);
+    if (m.by_part) for (const [part, value] of Object.entries(m.by_part)) add(`  ${part.replace(m.name + "_", "")} part`, signedUsd(value), tone(value));
+    return el("article", {class: "card" + (shown.has(m.name) ? "" : " hidden-model")},
+      el("h3", {}, keyMark(m), m.name),
+      el("div", {class: "sub"}, el("span", {class: `verdict ${m.passes ? "pass" : "fail"}`}, m.passes ? "✓ Pass" : "✕ Fail"),
+        ` · ${m.live_ready ? "live-ready" : "needs a live version"}${m.hit_loss_limit ? " · hit the 40% loss limit" : ""}`),
+      el("div", {},
+        el("span", {class: "big"}, usd(m.final_equity)),
+        el("span", {class: "delta"}, pct(m.total_return * 100))),
+      list);
+  }));
+}
+
+function renderTable(models) {
+  const head = el("thead", {}, el("tr", {}, ...[["Show"], ["Result"], ["Return", 1], ["Worst drop", 1], ["Without best coin", 1], ["Best coin"],
+    ["Worst delay", 1], ["Trades", 1], ["Live"]].map(([t, n]) => el("th", {scope: "col", class: n ? "n" : ""}, t))));
+  const rule = (ok, text) => ok ? "" : ` (${text})`;
+  const body = el("tbody", {}, ...models.map(m => {
+    const box = el("input", {type: "checkbox", "aria-label": `Show ${m.name} on the chart`});
+    box.checked = shown.has(m.name);
+    box.addEventListener("click", e => e.stopPropagation());
+    box.addEventListener("change", () => toggle(m.name));
+    const failed = [m.profitable ? null : "loses money", m.without_best_coin ? null : "needs its best coin", m.every_delay ? null : "loses at a delay"].filter(Boolean);
+    const row = el("tr", {},
+      el("td", {}, el("label", {}, box, keyMark(m), m.name)),
+      el("td", {class: `verdict ${m.passes ? "pass" : "fail"}`}, m.passes ? "✓ Pass" : `✕ Fail${failed.length ? ": " + failed.join(", ") : ""}`),
+      el("td", {class: "n " + tone(m.total_return)}, pct(m.total_return * 100)),
+      el("td", {class: "n"}, pct(m.max_drawdown * 100)),
+      el("td", {class: "n " + tone(m.net_without_best_coin)}, signedUsd(m.net_without_best_coin)),
+      el("td", {}, (m.best_coin || "—").replace(/USDT.*$/, "")),
+      el("td", {class: "n " + tone(m.worst_delay_return)}, pct(m.worst_delay_return * 100)),
+      el("td", {class: "n"}, m.trades.toLocaleString()),
+      el("td", {}, m.live_ready ? "Ready" : "Not yet"));
+    row.addEventListener("click", () => toggle(m.name));
+    return row;
+  }));
+  $("models").replaceChildren(head, body);
+}
+
+let chartData = [];
+function renderChart(models) {
+  const visible = models.filter(m => shown.has(m.name));
+  $("legend").replaceChildren(...visible.map(m => el("span", {}, keyMark(m), m.name)));
+  chartData = visible.map(m => ({
+    name: m.name, color: seriesColor(m.series), dash: seriesDash(m.series),
+    points: m.curve.map(p => ({t: p.time_ms, r: (p.equity / state.start_usd - 1) * 100})),
+  }));
+  drawChart();
+}
+
+const SVG = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, text) {
+  const node = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text != null) node.textContent = text;
+  return node;
+}
+function niceTicks(lo, hi, count) {
+  const raw = (hi - lo) / count, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+  const ticks = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step / 1e6; v += step) ticks.push(+v.toFixed(6));
+  return ticks;
+}
+
+function drawChart() {
+  const svg = $("plot"), tip = $("tip");
+  svg.replaceChildren();
+  tip.style.display = "none";
+  const box = svg.getBoundingClientRect();
+  const W = box.width, H = box.height;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const all = chartData.flatMap(s => s.points);
+  if (!all.length) {
+    svg.append(svgEl("text", {x: W / 2, y: H / 2, "text-anchor": "middle", fill: "var(--text-2)", "font-size": 13}, "Tick a model below to show it here"));
+    return;
+  }
+  // Wide screens get a name at the end of each line, so lines aren't identified by colour alone.
+  const directLabels = W >= 560;
+  const m = {l: 56, r: directLabels ? 200 : 16, t: 10, b: 26};
+  const tMin = Math.min(...all.map(p => p.t)), tMax = Math.max(...all.map(p => p.t));
+  let lo = Math.min(0, ...all.map(p => p.r)), hi = Math.max(0, ...all.map(p => p.r));
+  const span = Math.max(hi - lo, 1);
+  lo -= span * 0.06; hi += span * 0.06;
+  const x = t => m.l + (t - tMin) / Math.max(tMax - tMin, 1) * (W - m.l - m.r);
+  const y = r => m.t + (hi - r) / (hi - lo) * (H - m.t - m.b);
+  for (const v of niceTicks(lo, hi, 5)) {
+    svg.append(svgEl("line", {x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--text-3)" : "var(--grid)", "stroke-width": 1}));
+    svg.append(svgEl("text", {x: m.l - 8, y: y(v) + 4, "text-anchor": "end", fill: "var(--text-3)", "font-size": 11}, (v > 0 ? "+" : "") + v.toLocaleString() + "%"));
+  }
+  const xCount = Math.max(1, Math.min(6, Math.floor((W - m.l - m.r) / 90)));
+  for (let i = 0; i <= xCount; i++) {
+    const t = tMin + (tMax - tMin) * i / xCount;
+    svg.append(svgEl("text", {x: x(t), y: H - 7, "text-anchor": i === 0 ? "start" : i === xCount ? "end" : "middle", fill: "var(--text-3)", "font-size": 11}, month(t)));
+  }
+  for (const s of chartData) {
+    if (s.points.length < 2) continue;
+    const d = s.points.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)} ${y(p.r).toFixed(1)}`).join("");
+    svg.append(svgEl("path", {d, fill: "none", stroke: s.color, "stroke-dasharray": s.dash, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round"}));
+  }
+  if (directLabels) {
+    const labels = chartData.filter(s => s.points.length >= 2)
+      .map(s => ({text: `${s.name} ${pct(s.points[s.points.length - 1].r, 0)}`, y: y(s.points[s.points.length - 1].r)}))
+      .sort((a, b) => a.y - b.y);
+    // Nudge labels apart when lines finish close together, then keep them on the plot.
+    labels.forEach((l, i) => { if (i && l.y - labels[i - 1].y < 14) l.y = labels[i - 1].y + 14; });
+    const overflow = labels.length ? labels[labels.length - 1].y - (H - m.b) : 0;
+    if (overflow > 0) labels.forEach(l => { l.y -= overflow; });
+    for (const l of labels) svg.append(svgEl("text", {x: W - m.r + 8, y: l.y + 4, fill: "var(--text-2)", "font-size": 11}, l.text));
+  }
+  const cross = svgEl("line", {y1: m.t, y2: H - m.b, stroke: "var(--text-3)", "stroke-width": 1, visibility: "hidden"});
+  svg.append(cross);
+  const dots = chartData.map(s => {
+    const c = svgEl("circle", {r: 4, fill: s.color, stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden"});
+    svg.append(c);
+    return c;
+  });
+  const hit = svgEl("rect", {x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent"});
+  svg.append(hit);
+  const nearest = (pts, t) => pts.reduce((b, p) => Math.abs(p.t - t) < Math.abs(b.t - t) ? p : b, pts[0]);
+  hit.addEventListener("pointermove", e => {
+    const rect = svg.getBoundingClientRect();
+    const t = tMin + (e.clientX - rect.left - m.l) / (W - m.l - m.r) * (tMax - tMin);
+    const rows = chartData.filter(s => s.points.length).map((s, i) => ({s, i, p: nearest(s.points, t)}));
+    if (!rows.length) return;
+    const tx = x(rows[0].p.t);
+    cross.setAttribute("x1", tx); cross.setAttribute("x2", tx); cross.setAttribute("visibility", "visible");
+    chartData.forEach((s, i) => {
+      if (!s.points.length) return;
+      const p = nearest(s.points, t);
+      dots[i].setAttribute("cx", x(p.t)); dots[i].setAttribute("cy", y(p.r)); dots[i].setAttribute("visibility", "visible");
+    });
+    rows.sort((a, b) => b.p.r - a.p.r);
+    tip.replaceChildren(el("div", {style: "color:var(--text-2);margin-bottom:4px"}, day(rows[0].p.t)),
+      ...rows.map(({s, p}) => el("div", {class: "row"}, el("span", {class: "key", style: s.dash === "none" ? `background:${s.color}` : "background:none;border-top:2px dashed var(--text);height:0"}), s.name, el("b", {}, pct(p.r)))));
+    tip.style.display = "block";
+    const chartBox = $("chart").getBoundingClientRect();
+    const left = e.clientX - chartBox.left;
+    tip.style.left = (left > chartBox.width / 2 ? left - tip.offsetWidth - 14 : left + 14) + "px";
+    tip.style.top = (rect.top - chartBox.top + 16) + "px";
+  });
+  hit.addEventListener("pointerleave", () => {
+    cross.setAttribute("visibility", "hidden");
+    dots.forEach(d => d.setAttribute("visibility", "hidden"));
+    tip.style.display = "none";
+  });
+}
+
+function renderAll() {
+  renderCards(state.models);
+  renderChart(state.models);
+  renderTable(state.models);
+}
+
+$("show-all").addEventListener("click", () => setShown(state.models.map(m => m.name)));
+$("show-passing").addEventListener("click", () => setShown(state.models.filter(m => m.passes).map(m => m.name)));
+$("show-live").addEventListener("click", () => setShown(state.models.filter(m => m.live_ready).map(m => m.name)));
+$("hide-all").addEventListener("click", () => setShown([]));
+
+// The test as it ran, then any reruns at other starting balances.
+const SIZE_KEY = "crypbro-locked-size";
+let datasets = [];
+function renderSizes() {
+  const box = $("size-switch");
+  box.style.display = datasets.length > 1 ? "flex" : "none";
+  box.replaceChildren("Starting balance:", ...datasets.map(d => {
+    const b = el("button", {type: "button", "aria-pressed": String(d === state)},
+      `$${d.start_usd.toLocaleString()}${d === datasets[0] ? " (as tested)" : ""}`);
+    b.addEventListener("click", () => pick(d));
+    return b;
+  }));
+}
+function pick(d) {
+  state = d;
+  try { localStorage.setItem(SIZE_KEY, String(d.start_usd)); } catch {}
+  renderHeader(d);
+  renderSizes();
+  renderAll();
+}
+
+async function load() {
+  try {
+    const response = await fetch(STATIC ? `state.json?t=${Date.now()}` : "/api/locked");
+    if (!response.ok) throw new Error(response.status);
+    const d = await response.json();
+    if (!d.models) {
+      $("status").textContent = "";
+      $("cards").replaceChildren(el("p", {class: "empty"}, "No results yet. They appear here when the locked test, or its practice run, finishes."));
+      return;
+    }
+    datasets = [d, ...(d.other_sizes || [])];
+    let saved = null;
+    try { saved = Number(localStorage.getItem(SIZE_KEY)); } catch {}
+    shown = loadShown(d.kind, d.models);
+    pick(datasets.find(x => x.start_usd === saved) || d);
+  } catch {
+    $("status").textContent = "Can't read the results";
+  }
+}
+load();
+let resizeTimer;
+addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => state && drawChart(), 150); });
+</script>
+</body>
+</html>
